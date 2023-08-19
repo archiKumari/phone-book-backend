@@ -2,7 +2,32 @@ const express = require('express');
 const router = express.Router();
 
 // In-memory storage for contacts (replace this with a database)
-let contacts = [];
+let contacts = [
+  {
+      "name": "Archi Kumari",
+      "contactNumber": "07991163323",
+      "email": "archikumari97@gmail.com",
+      "id": 16
+  },
+  {
+      "name": "raj",
+      "contactNumber": "9876534567",
+      "email": "raj@gmail.com",
+      "id": 17
+  },
+  {
+      "name": "Apurva",
+      "contactNumber": "8678998767",
+      "email": "apurva@gmail.com",
+      "id": 18
+  },
+  {
+      "name": "Ami Kumari",
+      "contactNumber": "83476543456",
+      "email": "ami@gmail.com",
+      "id": 19
+  },
+];
 
 // Create a new contact
 router.post('/', (req, res) => {
@@ -22,7 +47,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const contactId = req.params.id;
   console.log(contactId);
-  const contact = contacts.find(contact => contact.id === contactId);
+  const contact = contacts.find(contact => contact.id == contactId);
   if (contact) {
     res.json(contact);
   } else {
