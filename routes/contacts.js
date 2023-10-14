@@ -2,34 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 
-// In-memory storage for contacts (replace this with a database)
-let contacts = [
-  {
-      "name": "Archi Kumari",
-      "contactNumber": "07991163323",
-      "email": "archikumari97@gmail.com",
-      "id": 16
-  },
-  {
-      "name": "raj",
-      "contactNumber": "9876534567",
-      "email": "raj@gmail.com",
-      "id": 17
-  },
-  {
-      "name": "Apurva",
-      "contactNumber": "8678998767",
-      "email": "apurva@gmail.com",
-      "id": 18
-  },
-  {
-      "name": "Ami Kumari",
-      "contactNumber": "83476543456",
-      "email": "ami@gmail.com",
-      "id": 19
-  },
-];
-
 const pool = new Pool({
   user: 'archi',
   host: 'localhost',
