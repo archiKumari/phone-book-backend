@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { Pool } = require('pg');
 
 // In-memory storage for contacts (replace this with a database)
 let contacts = [
@@ -29,18 +30,40 @@ let contacts = [
   },
 ];
 
+const pool = new Pool({
+  user: 'archi',
+  host: 'localhost',
+  database: 'phonebook',
+  password: '123',
+  port: 5432,
+});
+
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Error connecting to the database:', err);
+  } else {
+    console.log('Connected to the database at', res.rows[0].now);
+  }
+});
+
 // Create a new contact
 router.post('/', (req, res) => {
-  const newContact = req.body;
-  contacts.push(newContact);
-  res.status(201).json(newContact);
-  console.log(newContact);
+  const contact = req.body;
+  const addedContact = insertNewContact(contact);
+  res.status(201).json(addedContact);
 });
 
 // Get all contacts
+// router.get('/', async(req, res) => {
+//   const allContacts = await getAllContacts();
+//   console.log("Fetched contacts",allContacts);
+//   res.json(allContacts);
+// });
+
 router.get('/', (req, res) => {
-  console.log("Contacts here");
-  res.json(contacts);
+  const allContacts = getAllContacts()
+  console.log("Fetched contacts",allContacts);
+  res.json(allContacts);
 });
 
 // Get a specific contact by ID
@@ -74,5 +97,28 @@ router.delete('/:id', (req, res) => {
   contacts = contacts.filter(contact => contact.id !== contactId);
   res.status(204).end();
 });
+
+//Database functions
+function insertNewContact ({name,contactNumber,email}) {
+pool.query('INSERT INTO contacts (name, phone_number, email) VALUES ($1, $2, $3) RETURNING *', [name, contactNumber, email], (err, res) => {
+  if (err) {
+    console.error('Error inserting contact:', err);
+  } else {
+    console.log('Contact inserted successfully:');
+  }
+  return res.rows[0]
+});
+}
+
+function getAllContacts () {
+  pool.query('SELECT * from contacts', (err, res) => {
+  if (err) {
+    console.error('Error inserting contact:', err);
+  } else {
+    console.log('Fetched all contacts',res.rows);
+  }
+  return (res.rows);
+});
+}
 
 module.exports = router;
