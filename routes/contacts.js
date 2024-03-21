@@ -1,96 +1,62 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
 
-const pool = new Pool({
-  user: 'archi',
-  host: 'localhost',
-  database: 'phonebook',
-  password: '123',
-  port: 5432,
-});
-
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Error connecting to the database:', err);
-  } else {
-    console.log('Connected to the database at', res.rows[0].now);
-  }
-});
-
-// Create a new contact
-router.post('/', (req, res) => {
-  const contact = req.body;
-  const addedContact = insertNewContact(contact);
-  res.status(201).json(addedContact);
-});
+const pool = require('../db');
 
 // Get all contacts
-// router.get('/', async(req, res) => {
-//   const allContacts = await getAllContacts();
-//   console.log("Fetched contacts",allContacts);
-//   res.json(allContacts);
-// });
-
-router.get('/', (req, res) => {
-  const allContacts = getAllContacts()
-  console.log("Fetched contacts",allContacts);
-  res.json(allContacts);
-});
-
-// Get a specific contact by ID
-router.get('/:id', (req, res) => {
-  const contactId = req.params.id;
-  console.log(contactId);
-  const contact = contacts.find(contact => contact.id == contactId);
-  if (contact) {
-    res.json(contact);
-  } else {
-    res.status(404).json({ message: 'Contact not found' });
+router.get('/', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM contacts');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Update a contact by ID
-router.put('/:id', (req, res) => {
-  const contactId = req.params.id;
-  const updatedContact = req.body;
-  const index = contacts.findIndex(contact => contact.id === contactId);
-  if (index !== -1) {
-    contacts[index] = updatedContact;
-    res.json(updatedContact);
-  } else {
-    res.status(404).json({ message: 'Contact not found' });
+// Add a new contact
+router.post('/', async (req, res, next) => {
+  const { name, phone, email } = req.body;
+  try {
+    const { rows } = await pool.query('INSERT INTO contacts (name, phone, email) VALUES ($1, $2, $3) RETURNING *', [name, phone, email]);
+    res.status(201).json(rows[0]);
+    console.log("Contact added!");
+  } catch (error) {
+    console.error('Error adding contact:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Delete a contact by ID
-router.delete('/:id', (req, res) => {
-  const contactId = req.params.id;
-  contacts = contacts.filter(contact => contact.id !== contactId);
-  res.status(204).end();
+// Update a contact
+router.put('/:id', async (req, res, next) => {
+  const { id } = req.params;
+  const { name, phone, email } = req.body;
+  try {
+    const { rows } = await pool.query('UPDATE contacts SET name=$1, phone=$2, email=$3 WHERE id=$4 RETURNING *', [name, phone, email, id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Error updating contact:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-//Database functions
-function insertNewContact ({name,contactNumber,email}) {
-pool.query('INSERT INTO contacts (name, phone_number, email) VALUES ($1, $2, $3) RETURNING *', [name, contactNumber, email], (err, res) => {
-  if (err) {
-    console.error('Error inserting contact:', err);
-  } else {
-    console.log('Contact inserted successfully:');
+// Delete a contact
+router.delete('/:id', async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const { rowCount } = await pool.query('DELETE FROM contacts WHERE id=$1', [id]);
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  return res.rows[0]
 });
-}
 
-function getAllContacts () {
-  pool.query('SELECT * from contacts', (err, res) => {
-  if (err) {
-    console.error('Error inserting contact:', err);
-  } else {
-    console.log('Fetched all contacts',res.rows);
-  }
-  return (res.rows);
-});
-}
 
 module.exports = router;
